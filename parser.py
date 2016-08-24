@@ -29,11 +29,11 @@ try :
     web_page = urllib2.urlopen(generate_url("5", "1", "Last3Days", "57", "", "50")).read()
     soup = BeautifulSoup(web_page, "html5lib")
     # specific_content_object = soup.find('status', {'class':'vi'}).contents
-    specific_content_object = soup.findAll("div", { "class" : "entryContainer" })
-    print(specific_content_object)
+    data_containers = soup.findAll("div", { "class" : "entry" })
+    # Extract the name container of the person
+    name_container = soup.findAll("div", { "class" : "obitName" })
+    print(name_container[0])
 except urllib2.HTTPError :
     print("HTTPERROR!")
 except urllib2.URLError :
     print("URLERROR!")
-
-print(soup)
