@@ -20,12 +20,12 @@ from bs4 import BeautifulSoup
 # name_extractor = re.compile('\b(?!Hello\b)\w+')
 
 
-# A function that generates a URL to parse data given some parameters as required by db.
-def generate_url(page_number, country, date_range, state_id, keyword, entries_per_page):
+# A function that generates a URL to parse data given some parameters as required by db. MAY NOT BE USED AFTER ALL
+def generate_url(page_number, country, date_range, state_id, keyword, entries_per_page, affiliateid):
     # The base URL
     url_base = "http://www.legacy.com/ns/obitfinder/obituary-search.aspx?"
     # The uri parameters
-    db_parameters = "Page=" + page_number + "&countryid=" + country + "&daterange=" + date_range + "&stateid=" + state_id +  "&keyword=" + keyword + "&entriesperpage=" + entries_per_page
+    db_parameters = "Page=" + page_number + "&countryid=" + country + "&daterange=" + date_range + "&stateid=" + state_id +  "&keyword=" + keyword + "&entriesperpage=" + entries_per_page + "&affiliateid=" + affiliateid
     # Combine the two pieces to generate query URi
     url_with_parameters = url_base + db_parameters
     # Return the uri string
@@ -43,13 +43,29 @@ def find_dates_on_text(text_to_analyze):
     return found_dates
 
 
+# A function to implement the number of pages that need to be navigated to extract data from.
+def get_number_of_pages(webpage_soup_object):
+    pagination_container = webpage_soup_object.findAll("div", { "id" : "Pagination" }).span.a
+    return len(pagination_container)
+
+def get_paged_records(page_number):
+
+    return 
+
 # A function to request entries from the site.
-def request_records(page_number, country, date_range, state_id, keyword, entries_per_page):
+def request_records(page_number, country, date_range, state_id, keyword, entries_per_page, affiliateid):
     # Attempt http connection
     try :
         # Open the needed URL
-        web_page = urllib2.urlopen(generate_url(page_number, country, date_range, state_id, keyword, entries_per_page)).read()
+        # web_page = urllib2.urlopen(url_with_parameters).read()
+        web_page = urllib2.urlopen(generate_url("1", "1", "Last3Days", "57", "", "50", "580")).read()
         # This is an example: web_page = urllib2.urlopen(generate_url("1", "1", "Last3Days", "57", "", "50")).read()
+
+        # Soupify the text
+        soup = BeautifulSoup(web_page, "html5lib")
+
+        # Get the number of pages needed to check
+        # number_of_pages = get_number_of_pages(soup)
 
         # Create an aray to store the names of the queried people
         parsed_names = []
@@ -57,11 +73,13 @@ def request_records(page_number, country, date_range, state_id, keyword, entries
         # Parsed people dictionary list FUTURE REFACTOR INTO HERE
         parsed_people = []
 
-        # Soupify the text
-        soup = BeautifulSoup(web_page, "html5lib")
         # Extract the name container of the person
         name_container = soup.findAll("div", { "class" : "obitName" })
+
+        # Date of birth items
         dob_container = soup.findAll("div", { "class" : "obitName" })
+
+        # Date of death items
         # dod_container
 
         # Loop through the items - REFACTOR INTO STANDALONE FUNCTION
@@ -99,6 +117,7 @@ def save_data_obtained(objects):
 
 # pdb.set_trace()
 
-# Main request ====================================
+# Main request initiate ====================================
 
-parsed_names = request_records("1", "1", "Last3Days", "57", "", "50")
+parsed_names = request_records("1", "1", "Last3Days", "57", "", "50", "580")
+# This is an example: "1", "1", "Last3Days", "57", "", "50", "580" | 580 for Dallas morning news
