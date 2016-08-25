@@ -48,9 +48,11 @@ def get_number_of_pages(webpage_soup_object):
     pagination_container = webpage_soup_object.findAll("div", { "id" : "Pagination" }).span.a
     return len(pagination_container)
 
+# A function that gets records from a specific page number
 def get_paged_records(page_number):
-
-    return 
+    # Soupified Paged Elements
+    paged_elements = ""
+    return paged_elements
 
 # A function to request entries from the site.
 def request_records(page_number, country, date_range, state_id, keyword, entries_per_page, affiliateid):
@@ -61,7 +63,7 @@ def request_records(page_number, country, date_range, state_id, keyword, entries
         web_page = urllib2.urlopen(generate_url("1", "1", "Last3Days", "57", "", "50", "580")).read()
         # This is an example: web_page = urllib2.urlopen(generate_url("1", "1", "Last3Days", "57", "", "50")).read()
 
-        # Soupify the text
+        # Soupify the site
         soup = BeautifulSoup(web_page, "html5lib")
 
         # Get the number of pages needed to check
@@ -113,7 +115,7 @@ def save_data_obtained(objects):
     with open('extracted_data.csv', 'w+') as csv_file:
         writer = csv.DictWriter(csv_file, fieldnames = ["Name"], dialect='excel')
         writer.writeheader()
-        writer.writerows({'Name' : parsed_names[row]} for row in range(0, len(parsed_names)))
+        writer.writerows({'Name' : objects[row]} for row in range(0, len(objects)))
 
 # pdb.set_trace()
 
@@ -121,3 +123,5 @@ def save_data_obtained(objects):
 
 parsed_names = request_records("1", "1", "Last3Days", "57", "", "50", "580")
 # This is an example: "1", "1", "Last3Days", "57", "", "50", "580" | 580 for Dallas morning news
+# Save the items
+save_data_obtained(parsed_names)
