@@ -35,6 +35,8 @@ def request_records(page_number, country, date_range, state_id, keyword, entries
     try :
         # Create an aray to store the names of the queried people
         parsed_names = []
+        # A list to store the non repeated items
+        non_repeated_parsed_list = []
         # Open the needed URL
         web_page = urllib2.urlopen(generate_url(page_number, country, date_range, state_id, keyword, entries_per_page)).read()
         # This is an example: web_page = urllib2.urlopen(generate_url("1", "1", "Last3Days", "57", "", "50")).read()
@@ -50,13 +52,19 @@ def request_records(page_number, country, date_range, state_id, keyword, entries
             # Recover only the name of the person and only obituaries.
             # Check if the string contains an obituary
             if 'obituary' in name_string:
-                name_string = name_string.strip('read obituary for ')
-                # Print the name just for debuggin purposes
+                # name_string = name_string.strip('read obituary for ')
+                # Print the name just for debugging purposes
                 print(name_string)
                 # Append string to array of names
                 parsed_names.append(name_string)
-        # Return a list
-        return parsed_names
+
+            # Remove the repeated elements
+            for item in parsed_names:
+                if item not in non_repeated_parsed_list:
+                    non_repeated_parsed_list.append(item)
+
+        # Return a list of names
+        return non_repeated_parsed_list
 
     except urllib2.HTTPError :
         print("HTTPERROR!")
@@ -67,6 +75,7 @@ def request_records(page_number, country, date_range, state_id, keyword, entries
 pdb.set_trace()
 parsed_names = request_records("1", "1", "Last3Days", "57", "", "50")
 pdb.set_trace()
+
 with open('extracted_data.csv', 'w+') as csv_file:
     writer = csv.DictWriter(csv_file, fieldnames = ["Name"], dialect='excel')
     writer.writeheader()
