@@ -9,6 +9,7 @@ import re
 import pdb
 import unicodedata
 import csv
+import math
 
 # pip install datefinder
 import datefinder
@@ -31,28 +32,74 @@ def generate_url(page_number, country, date_range, state_id, keyword, entries_pe
     # Return the uri string
     return url_with_parameters
 
+# A function that generates a request and returns a soup object.
+def generate_soup_from_uri(uri):
+    # Execute the urlopen
+    web_page = urllib2.urlopen(uri).read()
+    # Use soup to convert to object
+    soup = BeautifulSoup(web_page, "html5lib")
+    return soup
+
 
 # A function to get dates from text courtesy of datefinder package.
-def find_dates_on_text(text_to_analyze):
-    found_dates = []
-    matches = datefinder.find_dates(text_to_analyze)
-    # Store them in empty array
-    for date in matches:
-        found_dates.append(name_string)
-    # Spit them out
-    return found_dates
+# def find_dates_on_text(text_to_analyze):
+#     found_dates = []
+#     matches = datefinder.find_dates(text_to_analyze)
+#     # Store them in empty array
+#     for date in matches:
+#         found_dates.append(name_string)
+#     # Spit them out
+#     return found_dates
+
+
+
+# A function that gets the parameters that are going to be required in the extraction of data
+def get_parameters_for_extraction():
+    # Get input from the user about the desired length in time that is wanted
+    print("Please input the length of time desired to go back in time to. Use Last3Days as an example")
+    time_length = raw_input()
+
+    # Get some soup from a uri, please refactor become input from user.
+    soup = generate_soup_from_uri(generate_url("1", "1", time_length, "57", "", "50", "580"))
+    # A dictionary that contains several parameters.
+    extraction_session_params = {'number_of_pages' : 0, 'total_number_of_names' : 0, 'number_per_page' : 0}
+    # The following header is where we have the key to all the parameters. It reads like this usually:  1 - 50 of 1000
+    pdb.set_trace()
+    # First we get the div where the desired text is
+    results_header_with_number_of_posts = soup.findAll("div", { "class" : "ResultsHeader" })
+    # Now we get the important numbers inside the first <td>
+    important_numbers = results_header_with_number_of_posts[0].find("td").findAll("b")
+    # Convert unicode to integers
+    first_item_in_page = int(important_numbers[0].text)
+    last_item_in_page = int(important_numbers[1].text)
+    number_of_items = int(important_numbers[2].text)
+
+    # Set the parameters for extraction session
+
+    # Calculate the number of pages with the formula floor((total_items)/last_item_in_page - first_item_in_page)
+    calculated_number_of_pages = int(math.floor((number_of_items)/(last_item_in_page - first_item_in_page)))
+
+    extraction_session_params['number_of_pages'] = calculated_number_of_pages
+    extraction_session_params['number_per_page'] = int(((last_item_in_page)-(first_item_in_page)) + 1)
+    extraction_session_params['total_number_of_names'] = number_of_items
+
+    return extraction_session_params
+
+
+# A function that gets data needed, taking into account the number of pages
 
 
 # A function to implement the number of pages that need to be navigated to extract data from.
-def get_number_of_pages(webpage_soup_object):
-    pagination_container = webpage_soup_object.findAll("div", { "id" : "Pagination" }).span.a
-    return len(pagination_container)
+# def get_number_of_pages(webpage_soup_object):
+#     pagination_container = webpage_soup_object.findAll("div", { "id" : "Pagination" }).span.a
+#     return len(pagination_container)
 
 # A function that gets records from a specific page number
-def get_paged_records(page_number):
-    # Soupified Paged Elements
-    paged_elements = ""
-    return paged_elements
+# def get_paged_records(page_number):
+#     # Soupified Paged Elements
+#     paged_elements = ""
+#     return paged_elements
+
 
 # A function to request entries from the site.
 def request_records(page_number, country, date_range, state_id, keyword, entries_per_page, affiliateid):
@@ -121,7 +168,9 @@ def save_data_obtained(objects):
 
 # Main request initiate ====================================
 
-parsed_names = request_records("1", "1", "Last3Days", "57", "", "50", "580")
+# parsed_names = request_records("2", "1", "Last3Days", "57", "", "50", "580")
 # This is an example: "1", "1", "Last3Days", "57", "", "50", "580" | 580 for Dallas morning news
 # Save the items
-save_data_obtained(parsed_names)
+# save_data_obtained(parsed_names)
+
+get_parameters_for_extraction()
