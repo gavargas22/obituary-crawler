@@ -60,16 +60,6 @@ def save_data_obtained(objects):
         writer.writerows({'Name' : objects[row]} for row in range(0, len(objects)))
 
 
-# A function to get dates from text courtesy of datefinder package.
-# def find_dates_on_text(text_to_analyze):
-#     found_dates = []
-#     matches = datefinder.find_dates(text_to_analyze)
-#     # Store them in empty array
-#     for date in matches:
-#         found_dates.append(name_string)
-#     # Spit them out
-#     return found_dates
-
 
 
 # A function that gets the parameters that are going to be required in the extraction of data
@@ -99,51 +89,60 @@ def get_parameters_for_extraction(time_length, affiliate_code):
     # Spit them parameters out!
     return extraction_session_params
 
+# A function to look for the entries present on the page.
+def request_obituaries(soup):
+    # Look for the entries
+    entry_containers = soup.findAll("div", { "class" : "entry" })
+    # Empty list that will contain only the obituaries.
+    obituaries = []
+    for person in entry_containers:
+        # Get the name from the title
+        name_element = person.find("div", {"class" : "obitName"})
+        # Convert to string the names in the title field for manipulation.
+        name_string = unicodedata.normalize('NFKD', name_element.a['title']).encode('ascii','ignore').lower()
+        # Only pass the obituaries.
+        if 'obituary' in name_string:
+            obituaries.append(person)
 
-
-# A function that gets records from a specific page number
-# def get_paged_records(page_number):
-#     # Soupified Paged Elements
-#     paged_elements = ""
-#     return paged_elements
+    return obituaries
 
 
 # A function to request names from the queried site. ===========================
-def request_names(soup):
-    # Create an aray to store the names of the queried people
-    parsed_names = []
-
-    # Parsed people dictionary list FUTURE REFACTOR INTO HERE
-    # parsed_people = []
-
+def request_name(person):
     # Extract the name container of the person
-    name_container = soup.findAll("div", { "class" : "obitName" })
-
-    # Date of birth items
-    # dob_container = soup.findAll("div", { "class" : "obitName" })
-
-    # Date of death items
-    # dod_container
-
-    # Loop through the items - REFACTOR INTO STANDALONE FUNCTION
-    for name in name_container:
-        # Convert unicode into string to process and then downcase
-        name_string = unicodedata.normalize('NFKD', name.a['title']).encode('ascii','ignore').lower()
-        # Recover only the name of the person and only obituaries.
-        # Check if the string contains an obituary
-        if 'obituary' in name_string:
-            # Remove the initial string
-            name_string = re.sub(r"(?:[a-z][a-z]+)\s+(?:[a-z][a-z]+)\s+(?:[a-z][a-z]+)\s", "", name_string)
-            # Append string to list of names
-            parsed_names.append(name_string)
-
-        # Remove the repeated elements
-
-    # Return a list of names
+    name_container = soup.find("div", { "class" : "obitName" })
+    # Convert unicode into string to process and then downcase
+    name_string = unicodedata.normalize('NFKD', name.a['title']).encode('ascii','ignore').lower()
+    # Remove the initial string
+    name_string = re.sub(r"(?:[a-z][a-z]+)\s+(?:[a-z][a-z]+)\s+(?:[a-z][a-z]+)\s", "", name_string)
+    # Return the name
     return parsed_names
-# ============================
+# ==================================================
 
-# The main function that gets data needed, taking into account the number of pages
+# A function to get dates from text courtesy of datefinder package. ========================
+def find_date_of_death(person):
+    # Extract the container of text of the person
+    text_container = soup.find("div", { "class" : "obitText" })
+    # Exctract the text of the found textfield
+    date_containing_string = unicodedata.normalize('NFKD', text_container.text).encode('ascii','ignore')
+    # Look inside the text of an entry for such words as, passed, died.
+    death_finder = re.compile("(passed away.*|died.*)$")
+    death_text = death_finder.search(date_containing_string).group(1)
+    # Use the datefinder library to look for dates on text
+    matches = datefinder.find_dates(death_text)
+    # Possible dates list
+    possible_dates_of_death = []
+    for match in matches:
+        if not match:
+            possible_dates_of_death[0] = "No date found"
+        else:
+            possible_dates_of_death.append(str(match))
+    Return the first date, which is most likely to be the correct one.
+    return possible_dates_of_death[0]
+# ============================================================================
+
+
+# The main function that gets data needed, taking into account the number of pages ===============================
 def execute_extraction():
     # Get input from the user about the desired length in time that is wanted
     print("Please input the length of time desired to go back in time to. Use Last3Days as an example")
@@ -159,6 +158,8 @@ def execute_extraction():
 
     # Empty list to store the names
     names_from_extraction = []
+    # Empty list to store the dates
+    dates_from_extraction = []
     # Go through each page and generate URLs for soupifying the data.
     for p in range(0, params['number_of_pages']):
         print("Extracting from page: " + str(int(p) + 1) + " out of " + str(params['number_of_pages']))
@@ -167,11 +168,24 @@ def execute_extraction():
         url = generate_url(str(int(p)+1), time_length, affiliate_code)
         # Get the soup content from the URL generated.
         soup = generate_soup_from_uri(url)
-        # Get all the names
-        names = request_names(soup)
+        # Get the people in the page
+        people = request_obituaries(soup)
+
+        # For each person found
+        for person in people:
+        # Get the name
+        request_name(person)
+        # Get the dates of death
+        # find_date_of_death(person)
+        # Get the date of birth
+
+
+
+        # names = request_names(soup)
         # Insert names into the names_from_extraction list
         names_from_extraction.extend(names)
 
+        find_date_of_death(soup)
         # Now I can do other stuff here
 
     print(names_from_extraction)
