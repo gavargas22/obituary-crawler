@@ -243,11 +243,5 @@ def execute_extraction():
 
 
 
-# pdb.set_trace()
-
 # Main request initiate ====================================
 execute_extraction()
-# parsed_names = request_records("2", "1", "Last3Days", "57", "", "50", "580")
-# This is an example: "1", "1", "Last3Days", "57", "", "50", "580" | 580 for Dallas morning news
-# Save the items
-# save_data_obtained(parsed_names)
