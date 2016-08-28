@@ -53,13 +53,14 @@ def generate_soup_from_uri(uri):
 
 # A function to save data to a file.
 def save_data_obtained(objects):
+    fieldnames = ["death_date", "name"]
     # Do logic to save the CSV file
     with open('extracted_data.csv', 'w+') as csv_file:
-        writer = csv.DictWriter(csv_file, fieldnames = ["Name"], dialect='excel')
-        writer.writeheader()
-        writer.writerows({'Name' : objects[row]} for row in range(0, len(objects)))
-
-
+        writer = csv.DictWriter(csv_file, delimiter=',', fieldnames = ["death_date", "name"], dialect='excel')
+        writer.writerow(dict((fn, fn) for fn in fieldnames))
+        for person in objects:
+            writer.writerow(person)
+    csv_file.close()
 
 
 # A function that gets the parameters that are going to be required in the extraction of data
@@ -188,6 +189,8 @@ def execute_extraction():
             people_found.append(person_and_dates)
 
     print(people_found)
+    print("Writing the dictionary")
+    save_data_obtained(people_found)
 
 
 
