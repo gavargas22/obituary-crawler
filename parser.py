@@ -10,6 +10,7 @@ import pdb
 import unicodedata
 import csv
 import math
+import datetime
 
 # pip install datefinder
 import datefinder
@@ -53,10 +54,10 @@ def generate_soup_from_uri(uri):
 
 # A function to save data to a file.
 def save_data_obtained(objects):
-    fieldnames = ["death_date", "name"]
+    fieldnames = ["birth_date", "death_date", "name"]
     # Do logic to save the CSV file
     with open('extracted_data.csv', 'w+') as csv_file:
-        writer = csv.DictWriter(csv_file, delimiter=',', fieldnames = ["death_date", "name"], dialect='excel')
+        writer = csv.DictWriter(csv_file, delimiter=',', fieldnames = fieldnames, dialect='excel')
         writer.writerow(dict((fn, fn) for fn in fieldnames))
         for person in objects:
             writer.writerow(person)
@@ -146,6 +147,53 @@ def find_date_of_death(person):
 
 # ============================================================================
 
+# A function to get dates from text courtesy of datefinder package. ========================
+def find_date_of_birth(person):
+    # Extract the container of text of the person
+    text_container = person.find("div", { "class" : "obitText" })
+    # Exctract the text of the found textfield
+    date_containing_string = unicodedata.normalize('NFKD', text_container.text).encode('ascii','ignore')
+    # Look inside the text of an entry for such words as, passed, died.
+    try:
+        birth_finder = re.compile("(born.*)")
+        birth_text = birth_finder.search(date_containing_string).group(1)
+        # Use the datefinder library to look for dates on text
+        matches = datefinder.find_dates(birth_text)
+        # Get the possible date of death from the person
+        date_of_death = find_date_of_death(person)
+        # Possible dates list
+        possible_dates_of_birth = []
+        # If any matches are found lets try to get information out of them.
+        if matches:
+            for match in matches:
+                # If match was somehow empty and we are in this point
+                if not match:
+                    possible_dates_of_birth[0] = "No date found"
+                # If there is some sort of date found, however...
+                else:
+                    # Lets defensively check if there is anything we can use
+                    try:
+                        # Check to see if the date is at least one day less than the date of death
+                        if match < date_of_death - datetime.timedelta(days=1):
+                            # If a date of birth that is at least 1 day older than the date of death is found, append it to a date of birth possibility list
+                            possible_dates_of_birth.append(str(match))
+                        # If there was no success finding a date of birth, just return that there are no dates
+                        else:
+                            possible_dates_of_birth.append("No dates found")
+                    # If we have a catastrophic error, where nothing was found..
+                    except:
+                        print("Could not find any dates of any kind to do any sort of check... time to move on")
+        # So if no matches were found after all the checking, just return message.
+        else:
+            possible_dates_of_birth[0] = "No date found"
+
+        # Return the first date, which is most likely to be the correct one.
+        return possible_dates_of_birth[0]
+    except:
+        return "No date found"
+
+# ============================================================================
+
 
 # The main function that gets data needed, taking into account the number of pages ===============================
 def execute_extraction():
@@ -180,11 +228,12 @@ def execute_extraction():
             name = request_name(person)
             # Get the dates of death
             date_of_death = find_date_of_death(person)
+
             # Get the date of birth
-            # NOT YET IMPLEMENTED
+            date_of_birth = find_date_of_birth(person)
 
             # Dictionary entry to add
-            person_and_dates = {"name" : name, "death_date" : date_of_death}
+            person_and_dates = {"name" : name, "death_date" : date_of_death, "birth_date" : date_of_birth}
             # Insert the person that was found into the list of dictionaries.
             people_found.append(person_and_dates)
 
